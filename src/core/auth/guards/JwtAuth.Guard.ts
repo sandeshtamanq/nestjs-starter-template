@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Reflector } from '@nestjs/core';
+import { Request as RequestType } from 'express';
 
 import { ExtractJwt } from 'passport-jwt';
 import { decode, verify } from 'jsonwebtoken';
@@ -21,10 +22,11 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       context.getHandler(),
       context.getClass(),
     ]);
+
     if (isPublic) return true;
 
     const req = context.switchToHttp().getRequest();
-    const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req);
+    const token = ExtractJwt.fromExtractors([JwtAuthGuard.extractToken])(req);
     if (!token) return false;
 
     await super.canActivate(context);
@@ -36,8 +38,17 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
 
     const details = decode(token);
+
     if (!details) return false;
 
     return true;
+  }
+
+  private static extractToken(req: RequestType): string | null {
+    const accessToken = req?.cookies?.token;
+    if (accessToken == null || accessToken.length <= 0) {
+      return null;
+    }
+    return accessToken;
   }
 }

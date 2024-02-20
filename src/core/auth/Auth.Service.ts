@@ -36,7 +36,8 @@ export class AuthService {
       lastName: user.lastName,
       email: user.email,
     };
-    return this.generateJwt(payload);
+    const token = await this.generateJwt(payload);
+    return { user, token };
   }
 
   async signUp(signUpDto: SignUpDto) {
